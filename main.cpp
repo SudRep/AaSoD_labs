@@ -63,8 +63,6 @@ public:
 		delete[] _data;
 	}
 
-
-
 };
 
 
