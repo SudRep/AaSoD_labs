@@ -9,8 +9,6 @@ bool IsEqual(const T& a, const T& b) {
 		return a == b;
 	}
 
-
-
 template<typename T>
 class MyStack {
 	T* _data;
@@ -61,14 +59,12 @@ public:
 	}
 
 	MyStack(const MyStack& other) :_size(other._size), _capacity(other._capacity), _data(new T[other._capacity]) {
-		cout << "Copy constr" << endl;
 		for (size_t i = 0; i < _size; i++) {
 			_data[i] = other._data[i];
 		}
 	}
 
 	MyStack& operator=(const MyStack& other) {
-		cout << "Copy prisviv" << endl;
 		if (this != &other) {
 			MyStack temp(other);
 			swap(_data, temp._data);
@@ -79,6 +75,7 @@ public:
 	}
 
 	MyStack& operator+=(const T& value) {
+		T copy_val = value;
 		if (_size == _capacity) {
 			size_t new_cap = _capacity * 2;
 			T* new_data = new T[new_cap];
@@ -88,7 +85,7 @@ public:
 			_data = new_data;
 			_capacity = new_cap;
 		}
-		_data[_size++] = value;
+		_data[_size++] = copy_val;
 		return *this;
 	}
 
@@ -133,122 +130,114 @@ public:
 
 	bool empty() const { return _size == 0; }
 	size_t size() const { return _size; }
-
-
-	//временный метод для отладки
-	const T* rawData() const { return _data; }
 	
-
 	~MyStack() {
 		delete[] _data;
-		cout << "dist" << endl;
 	}
 };
 
 
+double PostfixEvaluation(const string& src) {
+	if (src.empty()) throw runtime_error("Invalid expression");
 
-void TestPush()  {
-	MyStack<string> s;
-	cout << "Size before: " << s.size() << endl;   // 0
-	cout << "Is empty: " << s.empty() << endl; // 1
+	MyStack<double> s;
+	string buffer;
 
-	s += "abc";
-	s += "xyz";
-	s += "zxc";
+	for (char c : src) {
+		if (isdigit(c) || c == '.')
+			buffer += c;
+		else  if (c == ' ') {
+			if (!buffer.empty()) {
+				s += stod(buffer);
+				buffer.clear();
+			}
+		}
+		else {
+			if (!buffer.empty()) {
+				s += stod(buffer);
+				buffer.clear();
+			}
+			if (s.size() < 2) throw runtime_error("Invalid expression");
 
-	cout << "Size after: " << s.size() << endl; // 3
-	cout << "Top: " << s.top() << endl; 
+			double b = s.top();
+			s.pop();
+			double a = s.top();
+			s.pop();
+
+			double result = 0;
+			switch (c) {
+			case '+': result = a + b; break;
+			case '-': result = a - b; break;
+			case '*': result = a * b; break;
+			case '/':
+				if (b == 0.0) throw runtime_error("Division by zero");
+				result = a / b;
+				break;
+			default: throw runtime_error("Unknown argument");
+			}
+			s += result;
+		}
+	}
+	if (!buffer.empty())
+		s += stod(buffer);
+
+	if (s.size() != 1) throw runtime_error("Invalid expression");
+
+	return s.top();
 }
 
-void TestPop() {
-	MyStack<int> s;
-	s += 1; 
-	s += 2; 
-	s += 3;
-
-	cout << "Top: " << s.top() << endl; // 3
-	--s;
-	cout << "Top: " << s.top() << endl; // 2
-	--s;
-	cout << "Top: " << s.top() << endl; // 1
-	--s;
-	cout << "Is empty: " << s.empty() << endl; // 1
-}
-
-void TestExceptions() {
-	MyStack<int> s;
-
+void TestPostfix() {
+	cout << PostfixEvaluation("3 4 +") << endl;         
+	cout << PostfixEvaluation("3 4 + 5 *") << endl;     
+	cout << PostfixEvaluation("1 2 + 3 4 - *") << endl; 
+	cout << PostfixEvaluation("10 3 -") << endl;        
+	cout << PostfixEvaluation("7 2 /") << endl;
 	try {
-		s.top();
+		PostfixEvaluation("10 0 /");
+	} 
+	catch (const exception& e) {
+		cout << e.what();
 	}
-	catch (const out_of_range& e) {
-		cout << e.what() << endl;
-	}
+}
 
+template<typename T>
+void DemoAll(const string type_name, const size_t count, const T& min, const T& max) {
+	cout << "=== Demo for type: " << type_name << " ===" << endl;
+
+	MyStack<T> s(count, min, max);
+	cout << "Random " << type_name << " stack:" << endl << s << endl << endl;
+	cout << "Stack size: " << endl << s.size() << endl << endl;
+	s += s.top();
+	cout << "Stack after += top(): " << endl << s << endl << endl;
+	cout << "Stack size: " << endl << s.size() << endl << endl;
+
+	cout << "top(): " << endl << s.top() << endl << endl;
+	s.pop();
+	s.pop();
+	cout << "After 2 pop(): " << endl << s << endl << endl;
+
+	MyStack<T> s_copy = s;
+	cout << "s_copy == s:" << endl <<  (s_copy == s) << endl << endl;
+	s_copy += min;
+	cout << "s_copy after change != s " << endl << (s_copy != s) << endl << endl;
+
+	MyStack<T> empty_s;
+	cout << "Empty stack: " << endl << empty_s.empty() << endl << endl;
 	try {
-		s.pop();
+		empty_s.top();
 	}
-	catch (const out_of_range& e) {
-		cout <<  e.what() << endl;
+	catch (const exception& e) {
+		cout << "Exception: " << e.what() << endl;
 	}
+	cout << "======== End Demo ========" << endl << endl;
 }
-
-void TestAllTypes() {
-	MyStack<char> sc(5, 'a', 'z');
-	cout << "char stack, size = " << sc.size() << endl;
-	for (size_t i = 0; i < sc.size(); ++i) {
-		cout << sc.rawData()[i] << endl;
-	}
-	cout << endl;
-	MyStack<float> sf(5, 0.0f, 1.0f);
-	cout << "float stack, size = " << sf.size() << endl;
-	for (size_t i = 0; i < sf.size(); ++i) {
-		cout << sf.rawData()[i] << endl;
-	}
-	cout << endl;
-	MyStack<double> sd(5, 0.0, 1.0);
-	cout << "double stack, size = " << sd.size() << endl;
-	for (size_t i = 0; i < sd.size(); ++i) {
-		cout << sd.rawData()[i] << endl;
-	}
-	cout << endl;
-	MyStack<string> ss(3, "3", "15");
-	cout << "string stack, size = " << ss.size() << "\n";
-	for (size_t i = 0; i < ss.size(); ++i) {
-		cout << ss.rawData()[i] << endl;
-	}
-}
-
-void EqualTest() {
-	MyStack<int> a(5, 0, 100);
-	MyStack<int> b(a);
-	MyStack<float> c(5, 0.0f, 1.0f);
-	MyStack<float> d(5, 0.0f, 1.0f);
-	if (a == b)
-		cout << "a == b" << endl;
-	else
-		cout << "a != b" << endl;
-	if (d != c)
-		cout << "d != c" << endl;
-}
-
-void TestOutput() {
-	MyStack<int> s;
-	s += 1; s += 2; s += 3;
-	cout << s << endl;
-
-	MyStack<char> sc;
-	sc += 'a'; sc += 'b'; sc += 'c';
-	cout << sc << endl;
-
-	MyStack<std::string> ss;
-	ss += "hello"; ss += "world";
-	cout << ss << endl;
-}
-
 
 int main() {
-	TestOutput();
+	DemoAll<int>("int", 5, 1, 100);
+	DemoAll<double>("double", 5, 0.0, 1.0);
+	DemoAll<char>("char", 7, 'a', 'z');
+	DemoAll<string>("string", 3, "3", "8");
+	TestPostfix();
 
 	return 0;
 }
