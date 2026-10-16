@@ -45,7 +45,7 @@ public:
 				if (len_min > len_max) throw invalid_argument("STRING: min > max");
 
 				uniform_int_distribution<int> len_dist(len_min, len_max);
-				std::uniform_int_distribution<int> char_dist(32, 126);
+				uniform_int_distribution<int> char_dist(32, 126);
 
 				int len = len_dist(gen);
 				string s;
@@ -201,7 +201,7 @@ void TestPostfix() {
 }
 
 template<typename T>
-void DemoAll(const string type_name, const size_t count, const T& min, const T& max) {
+void DemoAll(const string& type_name, const size_t count, const T& min, const T& max) {
 	cout << "=== Demo for type: " << type_name << " ===" << endl;
 
 	MyStack<T> s(count, min, max);
